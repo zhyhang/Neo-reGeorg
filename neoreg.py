@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-__author__  = 'L'
+__author__ = 'L'
 __version__ = '3.8.1'
 
 import sys
@@ -29,30 +29,30 @@ ROOT = os.path.dirname(os.path.realpath(__file__))
 ispython3 = True if sys.version_info >= (3, 0) else False
 
 # Constants
-SOCKTIMEOUT       = 5
-VER               = b"\x05"
-METHOD            = b"\x00"
-SUCCESS           = b"\x00"
-REFUSED           = b"\x05"
-#SOCKFAIL         = b"\x01"
-#NETWORKFAIL      = b"\x02"
-#HOSTFAIL         = b"\x04"
-#TTLEXPIRED       = b"\x06"
-#UNSUPPORTCMD     = b"\x07"
-#ADDRTYPEUNSPPORT = b"\x08"
-#UNASSIGNED       = b"\x09"
+SOCKTIMEOUT = 5
+VER = b"\x05"
+METHOD = b"\x00"
+SUCCESS = b"\x00"
+REFUSED = b"\x05"
+# SOCKFAIL         = b"\x01"
+# NETWORKFAIL      = b"\x02"
+# HOSTFAIL         = b"\x04"
+# TTLEXPIRED       = b"\x06"
+# UNSUPPORTCMD     = b"\x07"
+# ADDRTYPEUNSPPORT = b"\x08"
+# UNASSIGNED       = b"\x09"
 
 # Globals
-READBUFSIZE   = 7
-MAXTHERADS    = 1000
-READINTERVAL  = 300
+READBUFSIZE = 7
+MAXTHERADS = 1000
+READINTERVAL = 300
 WRITEINTERVAL = 200
-PHPTIMEOUT    = 0.5
+PHPTIMEOUT = 0.5
 
 # Logging
 RESET_SEQ = "\033[0m"
 COLOR_SEQ = "\033[1;%dm"
-BOLD_SEQ  = "\033[1m"
+BOLD_SEQ = "\033[1m"
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
@@ -65,18 +65,18 @@ LEVEL = [
 ]
 
 COLORS = {
-    'WARNING':  YELLOW,
-    'INFO':     WHITE,
-    'DEBUG':    BLUE,
+    'WARNING': YELLOW,
+    'INFO': WHITE,
+    'DEBUG': BLUE,
     'CRITICAL': YELLOW,
-    'ERROR':    RED,
-    'RED':      RED,
-    'GREEN':    GREEN,
-    'YELLOW':   YELLOW,
-    'BLUE':     BLUE,
-    'MAGENTA':  MAGENTA,
-    'CYAN':     CYAN,
-    'WHITE':    WHITE,
+    'ERROR': RED,
+    'RED': RED,
+    'GREEN': GREEN,
+    'YELLOW': YELLOW,
+    'BLUE': BLUE,
+    'MAGENTA': MAGENTA,
+    'CYAN': CYAN,
+    'WHITE': WHITE,
 }
 
 
@@ -124,6 +124,7 @@ transferLog = logging.getLogger("transfer")
 class SocksCmdNotImplemented(Exception):
     pass
 
+
 class Rand:
     def __init__(self, key):
         n = int(hashlib.sha512(key.encode()).hexdigest(), 16)
@@ -134,12 +135,12 @@ class Rand:
         random.seed(n)
 
     def header_key(self):
-        str_len = random.getrandbits(4) + 2 # len 2 to 17
-        return ''.join([ self.k_clist[random.getrandbits(10) % self.k_clen] for _ in range(str_len) ]).capitalize()
+        str_len = random.getrandbits(4) + 2  # len 2 to 17
+        return ''.join([self.k_clist[random.getrandbits(10) % self.k_clen] for _ in range(str_len)]).capitalize()
 
     def header_value(self):
-        str_len = random.getrandbits(6) + 2 # len 2 to 65
-        return ''.join([ self.v_clist[random.getrandbits(10) % self.v_clen] for _ in range(str_len) ])
+        str_len = random.getrandbits(6) + 2  # len 2 to 65
+        return ''.join([self.v_clist[random.getrandbits(10) % self.v_clen] for _ in range(str_len)])
 
     def base64_chars(self, charslist):
         if sys.version_info >= (3, 2):
@@ -149,6 +150,7 @@ class Rand:
                 xrange
             except NameError:
                 xrange = range
+
             def newshuffle(x):
                 def _randbelow(n):
                     getrandbits = random.getrandbits
@@ -159,7 +161,7 @@ class Rand:
                     return r
 
                 for i in xrange(len(x) - 1, 0, -1):
-                    j = _randbelow(i+1)
+                    j = _randbelow(i + 1)
                     x[i], x[j] = x[j], x[i]
 
         newshuffle(charslist)
@@ -192,7 +194,7 @@ class session(Thread):
         if ispython3:
             mark = mark.decode()
         mark = mark.replace('+', ' ').replace('/', '_')
-        mark = re.sub('^[ _]| $', 'L', mark) # Invalid return character or leading space in header
+        mark = re.sub('^[ _]| $', 'L', mark)  # Invalid return character or leading space in header
         return mark
 
     def parseSocks5(self, sock):
@@ -201,18 +203,18 @@ class session(Thread):
         methods = sock.recv(ord(nmethods))
         sock.sendall(VER + METHOD)
         ver = sock.recv(1)
-        if ver == b"\x02":                # this is a hack for proxychains
+        if ver == b"\x02":  # this is a hack for proxychains
             ver, cmd, rsv, atyp = (sock.recv(1), sock.recv(1), sock.recv(1), sock.recv(1))
         else:
             cmd, rsv, atyp = (sock.recv(1), sock.recv(1), sock.recv(1))
         target = None
         targetPort = None
-        if atyp == b"\x01":      # IPv4
+        if atyp == b"\x01":  # IPv4
             target = sock.recv(4)
             targetPort = sock.recv(2)
             target = inet_ntoa(target)
-        elif atyp == b"\x03":             # Hostname
-            targetLen = ord(sock.recv(1)) # hostname length (1 byte)
+        elif atyp == b"\x03":  # Hostname
+            targetLen = ord(sock.recv(1))  # hostname length (1 byte)
             target = sock.recv(targetLen)
             targetPort = sock.recv(2)
             if LOCALDNS:
@@ -223,7 +225,7 @@ class session(Thread):
                     return False
             else:
                 target = target.decode()
-        elif atyp == b"\x04":    # IPv6
+        elif atyp == b"\x04":  # IPv6
             target = sock.recv(16)
             targetPort = sock.recv(2)
             target = inet_ntop(AF_INET6, target)
@@ -233,11 +235,11 @@ class session(Thread):
 
         targetPortNum = struct.unpack('>H', targetPort)[0]
 
-        if cmd == b"\x02":   # BIND
+        if cmd == b"\x02":  # BIND
             raise SocksCmdNotImplemented("Socks5 - BIND not implemented")
-        elif cmd == b"\x03": # UDP
+        elif cmd == b"\x03":  # UDP
             raise SocksCmdNotImplemented("Socks5 - UDP not implemented")
-        elif cmd == b"\x01": # CONNECT
+        elif cmd == b"\x01":  # CONNECT
             try:
                 serverIp = inet_aton(target)
             except:
@@ -277,7 +279,6 @@ class session(Thread):
         mark = self.setupRemoteSession(host, int(port))
         return bool(mark)
 
-
     def error_log(self, str_format, headers):
         if K['X-ERROR'] in headers:
             message = headers[K["X-ERROR"]]
@@ -305,8 +306,9 @@ class session(Thread):
     def setupRemoteSession(self, target, port):
         self.mark = self.session_mark()
         target_data = ("%s|%d" % (target, port)).encode()
-        headers = {K["X-CMD"]: self.mark+V["CONNECT"], K["X-TARGET"]: self.encode_target(target_data)}
+        headers = {K["X-CMD"]: self.mark + V["CONNECT"], K["X-TARGET"]: self.encode_target(target_data)}
         self.headerupdate(headers)
+        headers['Cookie'] += INIT_COOKIE
         self.target = target
         self.port = port
 
@@ -321,7 +323,6 @@ class session(Thread):
         else:
             response = self.conn.get(self.url_sample(), headers=headers)
 
-
         rep_headers = response.headers
         if K['X-STATUS'] in rep_headers:
             status = rep_headers[K["X-STATUS"]]
@@ -332,7 +333,7 @@ class session(Thread):
                 self.error_log('[CONNECT] [%s:%d] ERROR: {}' % (self.target, self.port), rep_headers)
                 return False
         else:
-            log.critical('Bad KEY or non-neoreg server')
+            log.critical('Bad KEY or non-neoreg server, Request headers {}'.format(headers))
             return False
 
     def closeRemoteSession(self):
@@ -347,7 +348,7 @@ class session(Thread):
                         log.debug("[%s:%d] Localsocket already closed" % (self.target, self.port))
 
                 if hasattr(self, 'mark'):
-                    headers = {K["X-CMD"]: self.mark+V["DISCONNECT"]}
+                    headers = {K["X-CMD"]: self.mark + V["DISCONNECT"]}
                     self.headerupdate(headers)
                     log.debug("[HTTP] DISCONNECT Request ({})".format(self.mark))
                     response = self.conn.get(self.url_sample(), headers=headers)
@@ -362,8 +363,9 @@ class session(Thread):
 
     def reader(self):
         try:
-            headers = {K["X-CMD"]: self.mark+V["READ"]}
+            headers = {K["X-CMD"]: self.mark + V["READ"]}
             self.headerupdate(headers)
+            headers['Cookie'] += INIT_COOKIE
             n = 0
             while True:
                 try:
@@ -371,7 +373,8 @@ class session(Thread):
                         break
                     log.debug("[HTTP] READ Request ({})".format(self.mark))
                     response = self.conn.get(self.url_sample(), headers=headers)
-                    log.debug("[HTTP] READ Response ({}) => Code: {}, Size: {}".format(self.mark, response.status_code, len(response.content)))
+                    log.debug("[HTTP] READ Response ({}) => Code: {}, Size: {}".format(self.mark, response.status_code,
+                                                                                       len(response.content)))
                     rep_headers = response.headers
                     if K['X-STATUS'] in rep_headers:
                         status = rep_headers[K["X-STATUS"]]
@@ -384,28 +387,31 @@ class session(Thread):
                             else:
                                 data = self.decode_body(data)
                         else:
-                            msg = "[READ] [%s:%d] HTTP [%d]: Status: [%s]: Message [{}] Shutting down" % (self.target, self.port, response.status_code, rV[status])
+                            msg = "[READ] [%s:%d] HTTP [%d]: Status: [%s]: Message [{}] Shutting down" % (
+                            self.target, self.port, response.status_code, rV[status])
                             self.error_log(msg, rep_headers)
                             break
                     else:
-                        log.error("[READ] [%s:%d] HTTP [%d]: Shutting down" % (self.target, self.port, response.status_code))
+                        log.error(
+                            "[READ] [%s:%d] HTTP [%d]: Shutting down" % (self.target, self.port, response.status_code))
                         break
 
                     if len(data) > 0:
                         n += 1
                         data_len = len(data)
-                        transferLog.info("[%s:%d] [%s] (%d)<<<< [%d]" % (self.target, self.port, self.mark, n, data_len))
+                        transferLog.info(
+                            "[%s:%d] [%s] (%d)<<<< [%d]" % (self.target, self.port, self.mark, n, data_len))
                         while data:
                             writed_size = self.pSocket.send(data)
                             data = data[writed_size:]
                         if data_len < 500:
                             sleep(READINTERVAL)
 
-                except error: # python2 socket.send error
+                except error:  # python2 socket.send error
                     pass
                 except requests.exceptions.ConnectionError as e:
                     log.warning('[requests.exceptions.ConnectionError] {}'.format(e))
-                except requests.exceptions.ChunkedEncodingError as e: # python2 requests error
+                except requests.exceptions.ChunkedEncodingError as e:  # python2 requests error
                     log.warning('[requests.exceptions.ChunkedEncodingError] {}'.format(e))
                 except Exception as ex:
                     raise ex
@@ -414,7 +420,7 @@ class session(Thread):
 
     def writer(self):
         try:
-            headers = {K["X-CMD"]: self.mark+V["FORWARD"], 'Content-type': 'application/octet-stream'}
+            headers = {K["X-CMD"]: self.mark + V["FORWARD"], 'Content-type': 'application/octet-stream'}
             self.headerupdate(headers)
             n = 0
             while True:
@@ -430,14 +436,17 @@ class session(Thread):
                     if K['X-STATUS'] in rep_headers:
                         status = rep_headers[K["X-STATUS"]]
                         if status != V["OK"]:
-                            msg = "[FORWARD] [%s:%d] HTTP [%d]: Status: [%s]: Message [{}] Shutting down" % (self.target, self.port, response.status_code, rV[status])
+                            msg = "[FORWARD] [%s:%d] HTTP [%d]: Status: [%s]: Message [{}] Shutting down" % (
+                            self.target, self.port, response.status_code, rV[status])
                             self.error_log(msg, rep_headers)
                             break
                     else:
-                        log.error("[FORWARD] [%s:%d] HTTP [%d]: Shutting down" % (self.target, self.port, response.status_code))
+                        log.error("[FORWARD] [%s:%d] HTTP [%d]: Shutting down" % (
+                        self.target, self.port, response.status_code))
                         break
                     n += 1
-                    transferLog.info("[%s:%d] [%s] (%d)>>>> [%d]" % (self.target, self.port, self.mark, n, len(raw_data)))
+                    transferLog.info(
+                        "[%s:%d] [%s] (%d)>>>> [%d]" % (self.target, self.port, self.mark, n, len(raw_data)))
                     if len(raw_data) < READBUFSIZE:
                         sleep(WRITEINTERVAL)
                 except timeout:
@@ -446,7 +455,7 @@ class session(Thread):
                     break
                 except OSError:
                     break
-                except requests.exceptions.ConnectionError as e: # python2 socket.send error
+                except requests.exceptions.ConnectionError as e:  # python2 socket.send error
                     log.error('[requests.exceptions.ConnectionError] {}'.format(e))
                     break
                 except Exception as ex:
@@ -511,7 +520,7 @@ def askGeorg(conn, connectURLs, redirectURLs):
                             cookie = ''
                             for k, v in response.cookies.items():
                                 cookie += '{}={};'.format(k, v)
-                            HEADERS.update({'Cookie' : cookie})
+                            HEADERS.update({'Cookie': cookie})
                             log.warning("Automatically append Cookies: {}".format(cookie))
                         else:
                             log.error('There is no valid cookie return')
@@ -536,7 +545,7 @@ def askGeorg(conn, connectURLs, redirectURLs):
         return True
     elif BASICCHECKSTRING in data:
         left_offset = data.index(BASICCHECKSTRING)
-        right_offset = len(data) - ( left_offset + len(BASICCHECKSTRING) )
+        right_offset = len(data) - (left_offset + len(BASICCHECKSTRING))
         log.error("Georg is ready, but the body needs to be offset")
         args_tips = ''
         if left_offset:
@@ -558,7 +567,8 @@ def askGeorg(conn, connectURLs, redirectURLs):
             else:
                 log.warning('Expect Response: {}'.format(BASICCHECKSTRING[0:100]))
                 log.warning('Real Response: {}'.format(data.strip()[0:100]))
-                log.error("Georg is not ready, please check URL and KEY. rep: [{}] {}".format(response.status_code, response.reason))
+                log.error("Georg is not ready, please check URL and KEY. rep: [{}] {}".format(response.status_code,
+                                                                                              response.reason))
                 log.error("You can set the `--skip` parameter to ignore errors")
             exit()
 
@@ -577,16 +587,16 @@ def extract_body(data):
 
 def choice_useragent():
     user_agents = [
-       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/600.6.3 (KHTML, like Gecko) Version/8.0.6 Safari/600.6.3",
-       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit/600.7.12 (KHTML, like Gecko) Version/7.1.7 Safari/537.85.16",
-       "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.124 Safari/537.36",
-       "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0",
-       "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36",
-       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/600.7.11 (KHTML, like Gecko) Version/8.0.7 Safari/600.7.11",
-       "Mozilla/5.0 (X11; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0",
-       "Mozilla/5.0 (Windows NT 6.1; rv:38.0) Gecko/20100101 Firefox/38.0",
-       "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:38.0) Gecko/20100101 Firefox/38.0",
-       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:38.0) Gecko/20100101 Firefox/38.0"
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/600.6.3 (KHTML, like Gecko) Version/8.0.6 Safari/600.6.3",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit/600.7.12 (KHTML, like Gecko) Version/7.1.7 Safari/537.85.16",
+        "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.124 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/600.7.11 (KHTML, like Gecko) Version/8.0.7 Safari/600.7.11",
+        "Mozilla/5.0 (X11; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0",
+        "Mozilla/5.0 (Windows NT 6.1; rv:38.0) Gecko/20100101 Firefox/38.0",
+        "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:38.0) Gecko/20100101 Firefox/38.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:38.0) Gecko/20100101 Firefox/38.0"
     ]
     return random.choice(user_agents)
 
@@ -607,6 +617,7 @@ def file_write(filename, data):
     except:
         log.error("Failed to write file: %s" % filename)
         exit()
+
 
 banner = r"""
 
@@ -659,32 +670,56 @@ if __name__ == '__main__':
         parser.add_argument("-k", "--key", metavar="KEY", required=True, help="Specify connection key.")
         parser.add_argument("-o", "--outdir", metavar="DIR", help="Output directory.", default='neoreg_servers')
         parser.add_argument("-f", "--file", metavar="FILE", help="Camouflage html page file")
-        parser.add_argument("-c", "--httpcode", metavar="CODE", help="Specify HTTP response code. When using -r, it is recommended to <400. (default: 200)", type=int, default=200)
-        parser.add_argument("--read-buff", metavar="Bytes", help="Remote read buffer. (default: 513)", type=int, default=513)
-        parser.add_argument("--max-read-size", metavar="KB", help="Remote max read size. (default: 512)", type=int, default=512)
+        parser.add_argument("-c", "--httpcode", metavar="CODE",
+                            help="Specify HTTP response code. When using -r, it is recommended to <400. (default: 200)",
+                            type=int, default=200)
+        parser.add_argument("--read-buff", metavar="Bytes", help="Remote read buffer. (default: 513)", type=int,
+                            default=513)
+        parser.add_argument("--max-read-size", metavar="KB", help="Remote max read size. (default: 512)", type=int,
+                            default=512)
         args = parser.parse_args()
     else:
-        parser = argparse.ArgumentParser(description="Socks server for Neoreg HTTP(s) tunneller. DEBUG MODE: -k (debug_all|debug_base64|debug_headers_key|debug_headers_values)")
-        parser.add_argument("-u", "--url", metavar="URI", required=True, help="The url containing the tunnel script", action='append')
-        parser.add_argument("-r", "--redirect-url", metavar="URL", help="Intranet forwarding the designated server (only jsp(x))", action='append')
-        parser.add_argument("-t", "--target", metavar="IP:PORT", help="Network forwarding Target, After setting this parameter, port forwarding will be enabled")
+        parser = argparse.ArgumentParser(
+            description="Socks server for Neoreg HTTP(s) tunneller. DEBUG MODE: -k (debug_all|debug_base64|debug_headers_key|debug_headers_values)")
+        parser.add_argument("-u", "--url", metavar="URI", required=True, help="The url containing the tunnel script",
+                            action='append')
+        parser.add_argument("-r", "--redirect-url", metavar="URL",
+                            help="Intranet forwarding the designated server (only jsp(x))", action='append')
+        parser.add_argument("-t", "--target", metavar="IP:PORT",
+                            help="Network forwarding Target, After setting this parameter, port forwarding will be enabled")
         parser.add_argument("-k", "--key", metavar="KEY", required=True, help="Specify connection key")
-        parser.add_argument("-l", "--listen-on", metavar="IP", help="The default listening address.(default: 127.0.0.1)", default="127.0.0.1")
-        parser.add_argument("-p", "--listen-port", metavar="PORT", help="The default listening port.(default: 1080)", type=int, default=1080)
+        parser.add_argument("-l", "--listen-on", metavar="IP",
+                            help="The default listening address.(default: 127.0.0.1)", default="127.0.0.1")
+        parser.add_argument("-p", "--listen-port", metavar="PORT", help="The default listening port.(default: 1080)",
+                            type=int, default=1080)
         parser.add_argument("-s", "--skip", help="Skip usability testing", action='store_true')
-        parser.add_argument("-H", "--header", metavar="LINE", help="Pass custom header LINE to server", action='append', default=[])
+        parser.add_argument("-H", "--header", metavar="LINE", help="Pass custom header LINE to server", action='append',
+                            default=[])
         parser.add_argument("-c", "--cookie", metavar="LINE", help="Custom init cookies")
-        parser.add_argument("-x", "--proxy", metavar="LINE", help="Proto://host[:port]  Use proxy on given port", default=None)
-        parser.add_argument("--php-connect-timeout", metavar="S", help="PHP connect timeout.(default: 0.5)", type=float, default=PHPTIMEOUT)
+        parser.add_argument("-x", "--proxy", metavar="LINE", help="Proto://host[:port]  Use proxy on given port",
+                            default=None)
+        parser.add_argument("--php-connect-timeout", metavar="S", help="PHP connect timeout.(default: 0.5)", type=float,
+                            default=PHPTIMEOUT)
         parser.add_argument("--local-dns", help="Use local resolution DNS", action='store_true')
-        parser.add_argument("--read-buff", metavar="KB", help="Local read buffer, max data to be sent per POST.(default: {}, max: 50)".format(READBUFSIZE), type=int, default=READBUFSIZE)
-        parser.add_argument("--read-interval", metavar="MS", help="Read data interval in milliseconds.(default: {})".format(READINTERVAL), type=int, default=READINTERVAL)
-        parser.add_argument("--write-interval", metavar="MS", help="Write data interval in milliseconds.(default: {})".format(WRITEINTERVAL), type=int, default=WRITEINTERVAL)
-        parser.add_argument("--max-threads", metavar="N", help="Proxy max threads.(default: 1000)", type=int, default=MAXTHERADS)
-        parser.add_argument("--cut-left", metavar="N", help="Truncate the left side of the response body", type=int, default=0)
-        parser.add_argument("--cut-right", metavar="N", help="Truncate the right side of the response body", type=int, default=0)
-        parser.add_argument("--extract", metavar="EXPR", help="Manually extract BODY content. (eg: <html><p>REGBODY</p></html> )")
-        parser.add_argument("-v", help="Increase verbosity level (use -vv or more for greater effect)", action='count', default=0)
+        parser.add_argument("--read-buff", metavar="KB",
+                            help="Local read buffer, max data to be sent per POST.(default: {}, max: 50)".format(
+                                READBUFSIZE), type=int, default=READBUFSIZE)
+        parser.add_argument("--read-interval", metavar="MS",
+                            help="Read data interval in milliseconds.(default: {})".format(READINTERVAL), type=int,
+                            default=READINTERVAL)
+        parser.add_argument("--write-interval", metavar="MS",
+                            help="Write data interval in milliseconds.(default: {})".format(WRITEINTERVAL), type=int,
+                            default=WRITEINTERVAL)
+        parser.add_argument("--max-threads", metavar="N", help="Proxy max threads.(default: 1000)", type=int,
+                            default=MAXTHERADS)
+        parser.add_argument("--cut-left", metavar="N", help="Truncate the left side of the response body", type=int,
+                            default=0)
+        parser.add_argument("--cut-right", metavar="N", help="Truncate the right side of the response body", type=int,
+                            default=0)
+        parser.add_argument("--extract", metavar="EXPR",
+                            help="Manually extract BODY content. (eg: <html><p>REGBODY</p></html> )")
+        parser.add_argument("-v", help="Increase verbosity level (use -vv or more for greater effect)", action='count',
+                            default=0)
         args = parser.parse_args()
 
         if args.extract:
@@ -692,7 +727,8 @@ if __name__ == '__main__':
                 print('[!] Error extracting expression, REGBODY not found')
                 exit()
             else:
-                expr = re.sub('REGBODY', r'\\s*([A-Za-z0-9+/]*(?:=|==)?|<!-- [a-zA-Z0-9]+ -->)\\s*', re.escape(args.extract))
+                expr = re.sub('REGBODY', r'\\s*([A-Za-z0-9+/]*(?:=|==)?|<!-- [a-zA-Z0-9]+ -->)\\s*',
+                              re.escape(args.extract))
                 EXTRACT_EXPR = re.compile(expr, re.S)
 
     rand = Rand(args.key)
@@ -725,8 +761,8 @@ if __name__ == '__main__':
     V = {}
     rV = {}
     for name in ["FAIL", "Failed creating socket", "Failed connecting to target", "OK", "Failed writing socket",
-            "CONNECT", "DISCONNECT", "READ", "FORWARD", "Failed reading from socket", "No more running, close now",
-            "POST request read filed", "Intranet forwarding failed"]:
+                 "CONNECT", "DISCONNECT", "READ", "FORWARD", "Failed reading from socket", "No more running, close now",
+                 "POST request read filed", "Intranet forwarding failed"]:
         if args.key in ['debug_all', 'debug_headers_value']:
             V[name] = name
             rV[name] = name
@@ -762,7 +798,7 @@ if __name__ == '__main__':
                 data = base64.b64encode(url.encode())
                 if ispython3:
                     data = data.decode()
-                redirect_urls.append( data.translate(EncodeMap) )
+                redirect_urls.append(data.translate(EncodeMap))
 
         for header in args.header:
             if ':' in header:
@@ -773,7 +809,7 @@ if __name__ == '__main__':
                 exit()
 
         INIT_COOKIE = args.cookie
-        PROXY = { 'http': args.proxy, 'https': args.proxy } if args.proxy else None
+        PROXY = {'http': args.proxy, 'https': args.proxy} if args.proxy else None
 
         if args.target:
             if not re.match(r'[^:]+:\d+', args.target):
@@ -783,18 +819,17 @@ if __name__ == '__main__':
         else:
             print("  Starting SOCKS5 server [%s:%d]" % (args.listen_on, args.listen_port))
 
-
         print("  Tunnel at:")
         for url in urls:
-            print("    "+url)
+            print("    " + url)
 
         if args.proxy:
-            print("  Client Proxy:\n    "+ args.proxy)
+            print("  Client Proxy:\n    " + args.proxy)
 
         if redirect_urls:
             print("  Redirect to:")
             for url in args.redirect_url:
-                print("    "+url)
+                print("    " + url)
 
         print(separation)
         try:
@@ -807,8 +842,8 @@ if __name__ == '__main__':
             servSock_start = False
             askGeorg(conn, urls, redirect_urls)
 
-            READBUFSIZE  = min(args.read_buff, 50) * 1024
-            MAXTHERADS   = args.max_threads
+            READBUFSIZE = min(args.read_buff, 50) * 1024
+            MAXTHERADS = args.max_threads
             READINTERVAL = args.read_interval / 1000.0
             WRITEINTERVAL = args.write_interval / 1000.0
 
@@ -821,7 +856,6 @@ if __name__ == '__main__':
             except Exception as e:
                 log.error("[Server Listen] {}".format(e))
                 exit()
-
 
             while True:
                 try:
